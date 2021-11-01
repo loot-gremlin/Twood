@@ -225,3 +225,70 @@ if args[1]=="self":
     #print(final)
 
     singleUser(final, np.arange(len(final)), args[0])
+elif args[1]=="group":
+    #get data
+    data=dict()
+    get_tweets(args[0],data)
+    frens=get_friends(args[0])
+    for fren in frens:
+        get_tweets(fren._json["screen_name"],data)
+    sorted=sortdata(data)
+    sentences = []
+    num_time = num_tweets = 0
+    for i, j in sorted.items():
+        num_time = max(num_time, len(j))
+        for m, n in j.items():
+            num_tweets = max(num_tweets, len(n))
+    results = np.zeros(shape=(len(sorted), num_time, num_tweets), dtype=float)
+    user = 0
+    users = []
+    for i, j in sorted.items():
+        for m, n in j.items():
+            sentences.clear()
+            for p in n:
+                sentences.append(p[0])
+            #print(sentences)
+            seqeunces = tokenizer.texts_to_sequences(sentences)
+            data = pad_sequences(seqeunces, padding='post', maxlen=40)
+            #print(data)
+            out = model.predict(data)
+            for q in range(len(out)):
+                results[user][m][q] = out[q][0]
+            #print(model.predict(data))
+        users.append(i)
+        user += 1
+    #print(results[0].shape)
+    #print(results[0])
+    final = dict()
+    avgs = []
+    p = 0
+    #print(results)
+    #print(users)
+    for i in results:
+        avgs.clear()
+        for j in i:
+            summ = 0
+            num = 0
+            for k in j:
+                if (k != 0):
+                    summ += k
+                    num += 1
+            if (num != 0):
+                avg = summ/num
+            else:
+                avg = 0
+            avgs.append(avg)
+            #print(avgs)
+        final[users[p]] = avgs.copy()
+        #print(final)
+        p += 1
+    #print(final)
+    while True:
+        s=input("timeline from 0 to "+ str(num_time-1) +" (-1 to exit)\n")
+        if int(s)==-1 :break
+        plt.figure(int(s))
+        userFollowers(users[0],final,int(s))
+        plt.show()
+else:
+    print("Invalid Arguements!")
+    exit(1)
