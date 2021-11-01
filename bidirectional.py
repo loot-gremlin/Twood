@@ -47,51 +47,19 @@ print(len(seqeunces[0]), len(seqeunces), len(sentences))
 data = pad_sequences(seqeunces, padding='post')
 print(data[:4], len(data[0]))
 print(labels[:4])
-#print(partial_train.shape, partial_train[:4])
-'''
-embeddings_index = {}
-f = open('glove.6B.100d.txt', encoding='utf8')
-for line in f:
-    values = line.split()
-    word = values[0]
-    coefs = np.asarray(values[1:], dtype='float32')
-    embeddings_index[word] = coefs
-f.close()
-print('Loaded %s word vectors.' % len(embeddings_index))
-'''
 embedding_dim = 100
-'''
-embedding_matrix = np.zeros((WORDS, embedding_dim))
-for word, i in word_index.items():
-    embedding_vector = embeddings_index.get(word)
-    if i < WORDS:
-        if embedding_vector is not None:
-            # Words not found in embedding index will be all-zeros.
-            embedding_matrix[i] = embedding_vector
-'''
+
 model = models.Sequential()
 #print(np.random.randint(10000, size=(32,10)))
 model.add(layers.Embedding(WORDS, embedding_dim, input_length=len(partial_train[0])))
 model.add(layers.Bidirectional(layers.GRU(64, dropout=0.3, recurrent_dropout=0.35)))
-#model.add(layers.GRU(64, dropout=0.1, recurrent_dropout=0.5, return_sequences=True))
-#model.add(layers.GRU(128, activation='relu', dropout=0.1, recurrent_dropout=0.5))
-#model.add(layers.LSTM(64))
-#model.add(layers.Flatten())
-#model.add(layers.Dense(32, activation='relu'))
-#model.add(layers.Conv1D(32, 7, activation='relu'))
-#model.add(layers.MaxPooling1D(5))
-#model.add(layers.Conv1D(32, 5, activation='relu'))
-#model.add(layers.GlobalMaxPooling1D())
 model.add(layers.Dense(1))
-'''
-model.layers[0].set_weights([embedding_matrix])
-model.layers[0].trainable = False
-'''
+
 print(model.summary())
 cbs = [
     keras.callbacks.ModelCheckpoint("model{epoch:02d}-{val_mean_absolute_error:.2f}.h5", monitor='val_mean_absolute_error', verbose=0, save_best_only=True)
 ]
-#model.compile(optimizer='rmsprop', loss='mse', metrics=['mae'])
+
 model.compile(optimizer='rmsprop', loss='mse', metrics=['mae'])
 history = model.fit(partial_train, partial_label, epochs=40, batch_size=64, callbacks=cbs, validation_data=(val_data, val_label))
 average_mae_history = history.history['val_mean_absolute_error']
