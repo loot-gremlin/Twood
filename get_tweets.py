@@ -40,3 +40,28 @@ def get_friends(twitter_handle):
         else:
             index += 1
     return frnds
+
+def sortdata(usertweets):
+    output = dict()
+    for name in usertweets:
+        timediff = usertweets[name]['tweets'][0][1] - usertweets[name]['tweets'][-1][1]
+        average_tweet = len(usertweets[name]['tweets'])/(timediff.days+1)
+        active_age = timediff.days
+        current_month = usertweets[name]['tweets'][0][1].month
+        output[name] = dict()
+        month = 0        
+        output[name][month] = [usertweets[name]['tweets'][0][0]]
+        for tweet in usertweets[name]['tweets']:
+            if tweet[0] in output[name][0]:
+                continue
+            temp_m = tweet[1].month
+            if temp_m == current_month:
+                output[name][month].append(tweet[0])
+            else:
+                month += 1
+                output[name][month] = [tweet[0]]
+                current_month = temp_m
+        for i in range(len(output[name])):
+            output[name][i] = [[x] for x in output[name][i]]
+    return output
+
