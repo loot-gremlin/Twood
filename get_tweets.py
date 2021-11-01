@@ -65,3 +65,30 @@ def sortdata(usertweets):
             output[name][i] = [[x] for x in output[name][i]]
     return output
 
+if __name__ == '__main__':
+    '''
+    NEED TO GET YOUR OWN consumer_key, consumer_secret, access_token, and access_token_secret
+    '''
+    
+    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+    auth.set_access_token(access_token, access_token_secret)
+    api = tweepy.API(auth, wait_on_rate_limit=True)
+    
+    while True:
+        option = int(input('Would you like to search for your Twitter network or just yourself? (1, 2) ').strip())
+        if option != 1 and option != 2:
+            print(f'{option} is not one of the valid responses. Just press 1 or 2')
+        else:
+            break
+    twitter_handle = input('What is the Twitter handle of the user you\'d like to search? ').strip()
+    user_tweets = dict()
+    get_tweets(twitter_handle, user_tweets)
+    if option == 1:
+        friends = get_friends(twitter_handle)
+        for fren in friends:
+            if fren._json['protected']:
+                continue
+            get_tweets(fren._json['screen_name'], user_tweets)
+    
+    user_tweets = sortdata(user_tweets)
+    print(user_tweets)
