@@ -110,3 +110,118 @@ if __name__ == '__main__':
 #    print(user_tweets)
 
 #----------------------------------------------------------------------------------------------------------------------------------
+
+def singleUser(data,time,user):
+    print(data)
+    plt.plot(time,data,'c')
+    plt.title("Mood of User vs Time"+user)
+    plt.ylabel("Mood Scale")
+    plt.xlabel("Time (months)")
+    plt.show()
+
+def userFollowers(username, data, time):
+    #print(data)
+    g=nx.DiGraph()
+    g.add_node(username,stuff=data[username][time])
+    nodeColor=[data[username][time]]
+    sizeArray=[1200]
+    dict={username:(0,0)}
+    labeldict={}
+    j=1
+    
+    for x in data:
+        if(x==username): continue
+        g.add_node(x,stuff=data[x][time])
+        tWeight=abs(g.nodes[username]['stuff']-data[x][time])
+        g.add_edge(username,x,weight=tWeight)
+        nodeColor.append(data[x][time])
+        sizeArray.append(300)
+        angle=2*math.pi*(j/len(data))
+        xfac=math.cos(angle)/abs(math.cos(angle))*1000*abs(math.cos(angle))
+        yfac=math.sin(angle)/abs(math.sin(angle))*1000*abs(math.sin(angle))
+        dict[x]=(xfac+(tWeight/4)*4000*math.cos(angle),yfac+(tWeight/4)*4000*math.sin(angle))
+        labeldict[x]=x
+        j+=1
+    
+    nodes=nx.draw_networkx_nodes(g,pos=dict,node_color=nodeColor,cmap=plt.cm.plasma,node_size=sizeArray)
+    edgeColor=nodeColor
+    #print(edgeColor)
+    edgeColor.pop(0)
+    #print(edgeColor)
+    nx.draw_networkx_edges(g,pos=dict,edge_color=edgeColor,edge_cmap=plt.cm.plasma,width=2)
+    nx.draw_networkx_labels(g,pos=dict,labels={username:username},font_color='c')
+    nx.draw_networkx_labels(g,pos=dict,labels=labeldict,font_color='c',font_size=8)
+    # make the plot
+    plt.axis('off')
+    plt.plot()
+    plt.title("Graph Relations of Friends and their Relative Moods")
+    pc=mpl.collections.PathCollection(nodes,cmap=plt.cm.plasma)
+    pc.set_array(nodeColor)
+    plt.colorbar(pc)
+
+#datadata=[]
+#time=[]
+#user="User"
+#timescale="days"
+#howMany=5
+#for y in range(0,howMany):
+#    data={}
+#    for x in range(0,100):
+#        data[random_generator(9)]=(4.0*ran.random())
+#        time.append(x)
+#    data[user]=(4.0*ran.random())
+#    datadata.append(data)
+#random data for testing
+s=input("Twitter handle (no punctuation) and analysis style (self or group)")
+args=s.split()
+
+model = load_model("finalmodel.h5")
+with open('finaltoken.pickle', 'rb') as handle:
+    tokenizer = pickle.load(handle)
+
+if args[1]=="self":
+    #get data  stuff
+    data=dict()
+    get_tweets(args[0],data)
+    sorted=sortdata(data)
+    sentences = []
+    num_time = num_tweets = 0
+    for i, j in sorted.items():
+        num_time = max(num_time, len(j))
+        for m, n in j.items():
+            num_tweets = max(num_tweets, len(n))
+    results = np.zeros(shape=(len(sorted), num_time, num_tweets), dtype=float)
+    user = 0
+    for i, j in sorted.items():
+        for m, n in j.items():
+            sentences.clear()
+            for p in n:
+                sentences.append(p[0])
+            #print(sentences)
+            seqeunces = tokenizer.texts_to_sequences(sentences)
+            data = pad_sequences(seqeunces, padding='post', maxlen=40)
+            #print(data)
+            out = model.predict(data)
+            for q in range(len(out)):
+                results[user][m][q] = out[q][0]
+            #print(model.predict(data))
+        user += 1
+    #print(results[0].shape)
+    #print(results[0])
+    final = []
+    for i in results[0]:
+        summ = 0
+        num = 0
+        for j in i:
+            if (j != 0):
+                summ += j
+                num += 1
+        if (num != 0):
+            avg = summ/num
+        else:
+            avg = 0
+        final.append(avg)
+    
+    #print(final)
+
+    singleUser(final, np.arange(len(final)), args[0])
